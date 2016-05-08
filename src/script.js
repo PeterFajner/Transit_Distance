@@ -202,7 +202,8 @@ function drawCircle(position, radius, color, zindex, shapesArray)
         map: map,
         center: position,
         radius: radius,
-        zIndex: zindex
+        zIndex: zindex,
+        clickable: false
     });
     shapesArray.push(circle);
     return circle;
