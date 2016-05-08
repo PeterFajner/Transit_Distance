@@ -1,8 +1,11 @@
 "use strict"
 var map;
 var pos;
+var stops = {};
+var routes = {};
 
 var walkRadius = 200;
+var depth = 3
 
 function locationError()
 {
@@ -60,6 +63,45 @@ function initMap()
     })
 }
 
+function loadTransitData()
+{
+    var stopDataGetter = new XMLHttpRequest();
+    stopDataGetter.onreadystatechange = function() {
+        if (stopDataGetter.readyState == 4 && stopDataGetter.status == 200) {
+            var rawStopData = stopDataGetter.responseText;
+            var lines = rawStopData.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+                var split = lines[i].split(":");
+                var stop = split[0];
+                var r_routes = split[1].split(",");
+                stops[stop] = r_routes;
+            }
+            //console.log("stops: " + stops);
+        }
+    }
+    stopDataGetter.open("GET", "data/stops_compiled.txt");
+    stopDataGetter.send();
+    
+    var routeDataGetter = new XMLHttpRequest();
+    routeDataGetter.onreadystatechange = function() {
+        if (routeDataGetter.readyState == 4 && routeDataGetter.status == 200) {
+            var rawRouteData = routeDataGetter.responseText;
+            var lines = rawRouteData.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+                var split = lines[i].split(":");
+                var route = split[0];
+                var r_stops = split[1].split(",");
+                routes[route] = r_stops;
+            }
+            //console.log(routes);
+        }
+    }
+    routeDataGetter.open("GET", "data/stops_compiled.txt");
+    routeDataGetter.send();
+    
+    
+}
+
 function handleDrawingInstances()
 {
     var shapes = [];
@@ -71,30 +113,41 @@ function handleDrawingInstances()
         }
         shapes = [];
         // draw circle around position
-        var circle = drawCircle(map.getCenter(), walkRadius, "rgb(150,0,0)", shapes);
+        var circle = drawCircle(map.getCenter(), walkRadius, "rgb(150,0,0)", 0, shapes);
+        // draw other circles
+        for (let i = 0; i < depth; i++) {
+            
+        }
     });
 }
 
-function drawCircle(position, radius, color, shapesArray)
+function drawCircle(position, radius, color, zindex, shapesArray)
 {
     var circle = new google.maps.Circle({
-      strokeColor: color,
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: color,
-      fillOpacity: 0.35,
-      map: map,
-      center: position,
-      radius: radius
+        strokeColor: color,
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: color,
+        fillOpacity: 0.35,
+        map: map,
+        center: position,
+        radius: radius,
+        zIndex: zindex
     });
     shapesArray.push(circle);
     return circle;
+}
+
+function rgb(r,g,b)
+{
+    return 'rgb('+r+','+g+','+b+')';
 }
 
 function init()
 {
     console.log("init");
     initMap(); // gets location and inits map
+    loadTransitData();
     handleDrawingInstances();
     console.log("init finished");
 }

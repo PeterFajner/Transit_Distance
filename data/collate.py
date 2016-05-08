@@ -52,16 +52,18 @@ with open('stop_times.txt', 'r') as times_file, open('trips.txt', 'r') as trips_
 
     # write stops->routes to file
     with open('stops_compiled.txt', 'w') as stops_out:
+        lines = []
         for key,stop in stops.items():
             line = key + ":"
-            for route in stop["routes"]:
-                line += route + ','
-            stops_out.write(line + '\n')
+            line += ','.join(stop["routes"])
+            lines.append(line)
+        stops_out.write('\n'.join(lines))
 
     # write routes->stops to file
     with open('routes_compiled.txt', 'w') as routes_out:
+        lines = []
         for key,route in routes.items():
             line = key + ":"
-            for stop in route["stops"]:
-                line += stop + ','
-            routes_out.write(line + '\n')
+            line += ','.join(route["stops"])
+            lines.append(line)
+        routes_out.write('\n'.join(lines))
