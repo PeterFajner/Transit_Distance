@@ -54,7 +54,7 @@ with open('stop_times.txt', 'r') as times_file, open('trips.txt', 'r') as trips_
     with open('stops_compiled.txt', 'w') as stops_out:
         lines = []
         for key,stop in stops.items():
-            line = key + ":"
+            line = key + ":" + stop["lat"] + ":" + stop["lng"] + ":"
             line += ','.join(stop["routes"])
             lines.append(line)
         stops_out.write('\n'.join(lines))
