@@ -3,6 +3,7 @@ var map;
 var pos;
 var stops = {};
 var routes = {};
+var marker;
 
 var walkRadius = 200;
 var depth = 3
@@ -15,6 +16,8 @@ function locationError()
         position: pos,
         map: map
     });
+    
+    //handleDrawingInstances(); // draw the routes
 }
 
 function initMap()
@@ -31,21 +34,27 @@ function initMap()
             pos = {lat: position.coords.latitude, lng: position.coords.longitude};
             map.setCenter(pos);
             
-            // create dot at location
-            var marker = new google.maps.Marker({
+            // create position marker at location
+            var posMarker = new google.maps.Marker({
                 position: pos,
                 map: map
             });
+            
+            // move center marker to location
+            marker.setPosition(pos);
+            
+            //handleDrawingInstances(); // draw the routes
         }, locationError);
     }
     else {
         locationError();
     }
     
-    // create dot at center
-    var centerDot = new google.maps.Marker({
+    // create draggable marker
+    marker = new google.maps.Marker({
         position: map.getCenter(),
         map: map,
+        draggable: true,
         icon: {
             path: google.maps.SymbolPath.CIRCLE,
             strokeColor: '#0000FF',
@@ -53,18 +62,18 @@ function initMap()
             strokeWeight: 2,
             fillColor: '#0000FF',
             fillOpacity: 0.8,
-            scale: 5,
+            scale: 8,
         }
     });
-    
-    // whenever the map center changes, update dot position
-    map.addListener("center_changed", function() {
-        centerDot.setPosition(map.getCenter());
-    })
 }
 
 function loadTransitData()
 {
+    
+    var doubleSentinel = {"stops": false, "routes":false, "check":function() {
+        if (doubleSentinel["stops"] && doubleSentinel["routes"]) handleDrawingInstances();
+    }};
+    
     // compile stops
     var stopDataGetter = new XMLHttpRequest();
     stopDataGetter.onreadystatechange = function() {
@@ -82,6 +91,8 @@ function loadTransitData()
                 }
                 stops[stop] = {"lat":parseFloat(lat), "lng":parseFloat(lng), "routes":r_routes};
             }
+            doubleSentinel["stops"] = true;
+            doubleSentinel["check"]();
             //console.log("stops: " + stops);
         }
     }
@@ -104,10 +115,12 @@ function loadTransitData()
                 //console.log(lat + ":" + parseFloat(lat));
                 routes[route] = {"stops":r_stops};
             }
+            doubleSentinel["routes"] = true;
+            doubleSentinel["check"]();
             //console.log(routes);
         }
     }
-    routeDataGetter.open("GET", "data/stops_compiled.txt");
+    routeDataGetter.open("GET", "data/routes_compiled.txt");
     routeDataGetter.send();
 }
 
@@ -115,21 +128,24 @@ function handleDrawingInstances()
 {
     var shapes = [];
     var plottedRoutes = []; // routes that have already been plotted
+    var plottedStops = []; // stops that have already been plotted
     var layers = [];
     
-    map.addListener("center_changed", function() {
+    function dragged() {
         // remove all previous circles
         for (let i = 0; i < shapes.length; i++) { // for..in loop doesn't work here
             shapes[i].setMap(null);
         }
         shapes = [];
+        plottedRoutes = [];
+        plottedStops = [];
         // draw circle around position
-        var circle = drawCircle(map.getCenter(), walkRadius, "rgb(150,0,0)", 0, shapes);
+        var circle = drawCircle(marker.getPosition(), walkRadius, "rgb(150,0,0)", 0, shapes);
         
         // draw first layer
         // get stops within walkRadius of position
-        var lat1 = map.getCenter().lat();
-        var lng1 = map.getCenter().lng();
+        var lat1 = marker.getPosition().lat();
+        var lng1 = marker.getPosition().lng();
         var walkRadiusSq = Math.pow(walkRadius, 2);
         var stopsInRadius = [];
         for (stop in stops) { // get stops in radius
@@ -142,16 +158,37 @@ function handleDrawingInstances()
             }
         }
         var routesInRadius = [];
-        for (stop in stopsInRadius) { // get routes from stops
-            console.log(stopsInRadius[stop]["routes"]);
-            for (let i = 0; i < stopsInRadius[stop]["routes"].length; i++) {
-                console.log(stopsInRadius[stop]["routes"][i]);
+        let nextLayerStops = []; // all of the stops from all of the routes from the stops in radius
+        for (let s=0; s<stopsInRadius.length;s++) { // get routes from stops
+            let stop = stopsInRadius[s];
+            let max = stop["routes"].length;
+            for (let i = 0; i < max; i++) {
+                let r = stop["routes"][i];
+                // get all stops for that route
+                let r_stops = routes[r]["stops"];
+                // add all of this route's stops to the next layer's list of stops
+                //console.log(lodash.VERSION);
+                for (let substop in r_stops) {
+                    if (!_.contains(plottedStops, stops[r_stops[substop]])) {
+                        nextLayerStops.push(stops[r_stops[substop]]);
+                        plottedStops.push(stops[r_stops[substop]]);
+                    }
+                }
             }
-            /*for (route in stopsInRadius[stop]["routes"]) {
-                //console.log(stopsInRadius[stop]["routes"][route]);
-            }*/
         }
-    });
+        
+        // plot next layer stops
+        for (let stop in nextLayerStops) {
+            let lat = nextLayerStops[stop]["lat"];
+            let lng = nextLayerStops[stop]["lng"];
+            let latlng = {lat:lat,lng:lng};
+            console.log(nextLayerStops[stop]);//(latlng);
+            drawCircle({lat:lat,lng:lng}, walkRadius, "green", 2, shapes);
+        }
+    }
+    
+    marker.addListener("dragend", dragged);
+    dragged();
 }
 
 function drawCircle(position, radius, color, zindex, shapesArray)
@@ -201,6 +238,6 @@ function init()
     console.log("init");
     initMap(); // gets location and inits map
     loadTransitData();
-    handleDrawingInstances();
+    //handleDrawingInstances();
     console.log("init finished");
 }
