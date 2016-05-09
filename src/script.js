@@ -23,7 +23,8 @@ function locationError()
 
 function initMap()
 {
-    pos = {lat: 51.0443, lng: -114.0631}; // Calgary Tower
+    //pos = {lat: 51.0443, lng: -114.0631}; // Calgary Tower
+    pos = {lat: 50.9829, lng: -114.1021}; // Heritage Park
     map = new google.maps.Map(document.getElementById("map"), {
         center: pos,
         zoom: 15
@@ -36,13 +37,14 @@ function initMap()
             map.setCenter(pos);
             
             // create position marker at location
-            var posMarker = new google.maps.Marker({
+            /*var posMarker = new google.maps.Marker({
                 position: pos,
                 map: map
-            });
+            });*/
             
             // move center marker to location
             marker.setPosition(pos);
+            dragged();
             
             //handleDrawingInstances(); // draw the routes
         }, locationError);
@@ -209,16 +211,14 @@ function dragged()
     }
 }
 
-function contains(arr, item) { return _.contains(arr, item); }
-
 function drawCircle(position, radius, color, zindex, shapesArray)
 {
     var circle = new google.maps.Circle({
         strokeColor: color,
-        strokeOpacity: 0.8,
+        strokeOpacity: 0.6,
         strokeWeight: 2,
         fillColor: color,
-        fillOpacity: 0.35,
+        fillOpacity: 0.2,
         map: map,
         center: position,
         radius: radius,
@@ -259,7 +259,7 @@ function init()
     console.log("init");
     initMap(); // gets location and inits map
     loadTransitData();
-    showValue(4);
+    showValue(5);
     //handleDrawingInstances();
     console.log("init finished");
 }
