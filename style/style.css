@@ -1,6 +1,11 @@
+html {
+    height: 100%;
+}
+
 body {
     display: flex;
     color: darkslategrey;
+    min-height: 98%;
 }
 
 h2 {
@@ -16,11 +21,12 @@ ul > * {
 }
 
 #map {
-    height: 600px;
+    /*min-height: 70%;*/
+    margin: 10px;
     /*width: 800px;*/
     flex-grow: 1;
     float: right;
-    margin: 20px;
+    /*margin: 20px;*/
 }
 
 #menu {
