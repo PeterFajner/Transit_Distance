@@ -4,6 +4,7 @@ var pos;
 var stops = {};
 var routes = {};
 var marker;
+var shapes = [];
 
 var walkRadius = 200;
 var depth = 2;
@@ -125,88 +126,87 @@ function loadTransitData()
 }
 
 function handleDrawingInstances()
-{
-    var shapes = [];
-    var plottedRoutes = []; // routes that have already been plotted *UNUSED*
-    var plottedStops = []; // stops that have already been plotted
-    var layers = [];
-    
-    var nextLayerStops = [];
-    
-    function dragged()
-    {
-        // remove all previous circles
-        for (let i = 0; i < shapes.length; i++) { // for..in loop doesn't work here
-            shapes[i].setMap(null);
-        }
-        shapes = [];
-        plottedRoutes = [];
-        plottedStops = {};
-        nextLayerStops = {};
-        
-        // add current position as a mock stop
-        nextLayerStops = [{lat:marker.getPosition().lat(), lng:marker.getPosition().lng()}];
-        
-        // calculate and draw each layer
-        for (let L = 0; L < depth; L++) {
-            let tempNextLayerStops = {};
-            let stopsInRadius = {};
-            for (let stop in nextLayerStops) {
-                
-                console.log(L + ":" + stop);
-                        
-                // draw the stops for this layer
-                let lat = nextLayerStops[stop]["lat"];
-                let lng = nextLayerStops[stop]["lng"];
-                drawCircle({lat:lat,lng:lng}, walkRadius, rgb(100*L,100*L,100*L), L, shapes);
-                
-                // get other stops within radius
-                for (stop in stops) {
-                    var lat2 = stops[stop]["lat"];
-                    var lng2 = stops[stop]["lng"];
-                    var dist = latlng_to_m(lat, lng, lat2, lng2);
-                    if (dist < walkRadius) {
-                        stopsInRadius[stop] = stops[stop];
-                    }
-                }
-            }
-                
-            // get routes within radius
-            let routesInRadius = {};
-            for (let stopNum in stopsInRadius) { // get routes from stops
-                let stop = stopsInRadius[stopNum];
-                for (let routeIndex in stop["routes"]) {
-                    let routeNum = stop["routes"][routeIndex];
-                    routesInRadius[routeNum] = true;
-                }
-            }
-            
-            for (let routeNum in routesInRadius) {
-                let route = routes[routeNum];
-                // get all stops for that route
-                let r_stops = route["stops"];
-                // add all of this route's stops to the next layer's list of stops
-                for (let substop in r_stops) {
-                    plottedStops[r_stops[substop]] = stops[r_stops[substop]];
-                    tempNextLayerStops[r_stops[substop]] = stops[r_stops[substop]];
-                }
-            }
-
-            // get next-layer stops from each route in radius
-            for (let routeNum in routesInRadius) {
-                // get all stops for the route
-                let r_stops = routes[routeNum]["stops"];
-                // add all of the route's stops to the next layer's list of stops
-                for (let substop in r_stops) {
-                    plottedStops[r_stops[substop]] = stops[r_stops[substop]];
-                    tempNextLayerStops[r_stops[substop]] = stops[r_stops[substop]];
-                }
-            }
-            nextLayerStops = tempNextLayerStops;
-        }
-    }
+{  
     marker.addListener("dragend", dragged);
     dragged();
+}
+
+function dragged()
+{
+    let lStops = (JSON.parse(JSON.stringify(stops))); // deep clone stops and routes so we can delete from them and then reuse the original
+    let lRoutes = (JSON.parse(JSON.stringify(routes)));
+
+    var nextLayerStops = {};   
+    var plottedStops = {}; // stops that have already been plotted
+
+    // remove all previous circles
+    for (let i = 0; i < shapes.length; i++) { // for..in loop doesn't work here
+        shapes[i].setMap(null);
+    }
+    shapes = [];
+    plottedStops = {};
+    nextLayerStops = {};
+
+    // add current position as a mock stop
+    nextLayerStops = [{lat:marker.getPosition().lat(), lng:marker.getPosition().lng()}];
+
+    // calculate and draw each layer
+    for (let L = 0; L < depth; L++) {
+        let tempNextLayerStops = {};
+        let stopsInRadius = {};
+        for (let stop in nextLayerStops) {
+
+            //console.log(L + ":" + stop);
+
+            // draw the stops for this layer
+            let lat = nextLayerStops[stop]["lat"];
+            let lng = nextLayerStops[stop]["lng"];
+            drawCircle({lat:lat,lng:lng}, walkRadius, rgb(100*L,100*L,20*L), depth-L, shapes);
+
+            // get other stops within radius
+            for (stop in lStops) {
+                var lat2 = lStops[stop]["lat"];
+                var lng2 = lStops[stop]["lng"];
+                var dist = latlng_to_m(lat, lng, lat2, lng2);
+                if (dist < walkRadius) {
+                    stopsInRadius[stop] = lStops[stop];
+                }
+            }
+        }
+
+        // get routes within radius
+        let routesInRadius = {};
+        for (let stopNum in stopsInRadius) { // get routes from stops
+            let stop = stopsInRadius[stopNum];
+            for (let routeIndex in stop["routes"]) {
+                let routeNum = stop["routes"][routeIndex];
+                routesInRadius[routeNum] = true;
+            }
+        }
+
+        // get next-layer stops from each route in radius
+        for (let routeNum in routesInRadius) {
+            let route = lRoutes[routeNum];
+            if (route === undefined) continue;
+            // get all stops for that route
+            let r_stops = route["stops"];
+            // add all of this route's stops to the next layer's list of stops
+            for (let substop in r_stops) {
+                plottedStops[r_stops[substop]] = lStops[r_stops[substop]];
+                tempNextLayerStops[r_stops[substop]] = lStops[r_stops[substop]];
+            }
+        }
+
+        // clear the used stops and routes, as they aren't needed anymore
+        for (let stop in nextLayerStops) {
+            delete lStops[stop];
+        }
+        for (let route in routesInRadius) {
+            delete lRoutes[route];
+        }
+
+        nextLayerStops = tempNextLayerStops;
+    }
 }
 
 function contains(arr, item) { return _.contains(arr, item); }
@@ -259,6 +259,26 @@ function init()
     console.log("init");
     initMap(); // gets location and inits map
     loadTransitData();
+    showValue(4);
     //handleDrawingInstances();
     console.log("init finished");
+}
+
+function refresh()
+{
+    dragged();
+}
+
+function showValue(val)
+{
+    let value = Math.floor(Math.pow(val, 3.5)/10)*10 + 30;
+    document.getElementById("walkdistance").innerHTML = value + " metres"
+    walkRadius = value;
+    refresh();
+}
+
+function updateDepth(val)
+{
+    depth = parseInt(val);
+    refresh();
 }
