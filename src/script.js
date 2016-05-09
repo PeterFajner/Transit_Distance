@@ -6,7 +6,7 @@ var routes = {};
 var marker;
 
 var walkRadius = 200;
-var depth = 3;
+var depth = 2;
 
 function locationError()
 {
@@ -143,10 +143,10 @@ function handleDrawingInstances()
         plottedStops = [];
         nextLayerStops = [];
         
-        // draw circle around position
+        // add current position as a mock stop
         nextLayerStops = [{lat:marker.getPosition().lat(), lng:marker.getPosition().lng()}];
-        //var circle = drawCircle(marker.getPosition(), walkRadius, "rgb(150,0,0)", 0, shapes);
         
+        // calculate and draw each layer
         for (let L = 0; L < depth; L++) {
             let tempNextLayerStops = [];
             let stopsInRadius = [];
@@ -188,16 +188,6 @@ function handleDrawingInstances()
             }
             nextLayerStops = tempNextLayerStops;
         }
-        
-        
-        /*// plot next layer stops
-        for (let stop in nextLayerStops) {
-            let lat = nextLayerStops[stop]["lat"];
-            let lng = nextLayerStops[stop]["lng"];
-            let latlng = {lat:lat,lng:lng};
-            console.log(nextLayerStops[stop]);//(latlng);
-            drawCircle({lat:lat,lng:lng}, walkRadius, "green", 2, shapes);
-        }*/
     }
     
     marker.addListener("dragend", dragged);
