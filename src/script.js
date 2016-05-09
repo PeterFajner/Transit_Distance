@@ -58,7 +58,7 @@ function initMap()
         position: map.getCenter(),
         map: map,
         draggable: true,
-        icon: {
+        /*icon: {
             path: google.maps.SymbolPath.CIRCLE,
             strokeColor: '#0000FF',
             strokeOpacity: 1,
@@ -66,7 +66,7 @@ function initMap()
             fillColor: '#0000FF',
             fillOpacity: 0.8,
             scale: 8,
-        }
+        }*/
     });
 }
 
