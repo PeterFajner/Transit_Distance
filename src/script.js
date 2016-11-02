@@ -51,16 +51,7 @@ function initMap()
 }
 
 function loadTransitData()
-{
-
-    // REMOVE
-    /*
-    var sentinel = false
-    var check = function() {if (sentinel) handleDrawingInstances()};
-    var doubleSentinel = {"stops": false, "routes":false, "check":function() {
-        if (doubleSentinel["stops"] && doubleSentinel["routes"]) handleDrawingInstances();
-    }};*/
-    
+{    
     // compile stops
     function json_acquired(data, textStatus, jqXHR)
     {
@@ -68,54 +59,6 @@ function loadTransitData()
         handleDrawingInstances();
     }
     jQuery.getJSON("data/compiled_stops.json", "", json_acquired);
-
-
-    // REMOVE
-    /*
-    var stopDataGetter = new XMLHttpRequest();
-    stopDataGetter.onreadystatechange = function() {
-        if (stopDataGetter.readyState == 4 && stopDataGetter.status == 200) {
-            var rawStopData = stopDataGetter.responseText;
-            var lines = rawStopData.split('\n');
-            for (let i = 0; i < lines.length; i++) {
-                var split = lines[i].split(":");
-                var stop = split[0];
-                var lat = parseFloat(split[1]);
-                var lng = parseFloat(split[2]);
-                var r_routes = split[3].split(",");
-                for (let j = 0; j < r_routes.length; j++) {
-                    r_routes[j] = parseInt(r_routes[j]);
-                }
-                stops[stop] = {"lat":parseFloat(lat), "lng":parseFloat(lng), "routes":r_routes};
-            }
-            doubleSentinel["stops"] = true;
-            doubleSentinel["check"]();
-        }
-    }
-    stopDataGetter.open("GET", "data/stops_compiled.txt");
-    stopDataGetter.send();
-    
-    // compile routes
-    var routeDataGetter = new XMLHttpRequest();
-    routeDataGetter.onreadystatechange = function() {
-        if (routeDataGetter.readyState == 4 && routeDataGetter.status == 200) {
-            var rawRouteData = routeDataGetter.responseText;
-            var lines = rawRouteData.split('\n');
-            for (let i = 0; i < lines.length; i++) {
-                var split = lines[i].split(":");
-                var route = split[0];
-                var r_stops = split[1].split(",");
-                for (let j = 0; j < r_stops.length; j++) {
-                    r_stops[j] = parseInt(r_stops[j]);
-                }
-                routes[route] = {"stops":r_stops};
-            }
-            doubleSentinel["routes"] = true;
-            doubleSentinel["check"]();
-        }
-    }
-    routeDataGetter.open("GET", "data/routes_compiled.txt");
-    routeDataGetter.send();*/
 }
 
 function handleDrawingInstances()
@@ -139,11 +82,6 @@ function dragged()
     // add current position as a mock stop
     stops["user"] = {lat:marker.getPosition().lat(), lng:marker.getPosition().lng(), stops:[]}
     nextLayerStops = ["user"];
-
-
-
-    // TODO: prevent duplicates
-
 
     // calculate and draw each layer
     for (let L = 0; L < depth; L++) {
@@ -176,7 +114,6 @@ function dragged()
         for (let stopIndex in stopsInRadius) {
             let stopNum = stopsInRadius[stopIndex];
             let stop = stops[stopNum];
-            //console.log(stop["stops"]);
             for (let connectedStopIndex in stop["stops"]) {
                 let connectedStopNum = stop["stops"][connectedStopIndex];
                 if (nextLayerStops.indexOf(connectedStopNum) < 0 && plottedStops.indexOf(connectedStopNum) < 0) {
@@ -185,31 +122,6 @@ function dragged()
                 }
             }
         }
-
-        // REMOVE
-        /*
-        // get routes within radius
-        let routesInRadius = {};
-        for (let stopNum in stopsInRadius) { // get routes from stops
-            let stop = stopsInRadius[stopNum];
-            for (let routeIndex in stop["routes"]) {
-                let routeNum = stop["routes"][routeIndex];
-                routesInRadius[routeNum] = true;
-            }
-        }
-
-        // get next-layer stops from each route in radius
-        for (let routeNum in routesInRadius) {
-            let route = lRoutes[routeNum];
-            if (route === undefined) continue;
-            // get all stops for that route
-            let r_stops = route["stops"];
-            // add all of this route's stops to the next layer's list of stops
-            for (let substop in r_stops) {
-                plottedStops[r_stops[substop]] = lStops[r_stops[substop]];
-                tempNextLayerStops[r_stops[substop]] = lStops[r_stops[substop]];
-            }
-        }*/
     }
 }
 
@@ -258,11 +170,9 @@ function rgb(r,g,b)
 
 function init()
 {
-    //console.log("init");
     initMap(); // gets location and inits map
     loadTransitData();
     showValue(5);
-    //console.log("init finished");
 }
 
 function refresh()
