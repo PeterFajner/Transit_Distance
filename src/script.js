@@ -23,7 +23,6 @@ function locationError()
 
 function initMap()
 {
-    //pos = {lat: 51.0443, lng: -114.0631}; // Calgary Tower
     pos = {lat: 50.9829, lng: -114.1021}; // Heritage Park
     map = new google.maps.Map(document.getElementById("map"), {
         center: pos,
@@ -36,17 +35,10 @@ function initMap()
             pos = {lat: position.coords.latitude, lng: position.coords.longitude};
             map.setCenter(pos);
             
-            // create position marker at location
-            /*var posMarker = new google.maps.Marker({
-                position: pos,
-                map: map
-            });*/
-            
             // move center marker to location
             marker.setPosition(pos);
             dragged();
             
-            //handleDrawingInstances(); // draw the routes
         }, locationError);
     }
     else {
@@ -58,15 +50,6 @@ function initMap()
         position: map.getCenter(),
         map: map,
         draggable: true,
-        /*icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            strokeColor: '#0000FF',
-            strokeOpacity: 1,
-            strokeWeight: 2,
-            fillColor: '#0000FF',
-            fillOpacity: 0.8,
-            scale: 8,
-        }*/
     });
 }
 
@@ -96,7 +79,6 @@ function loadTransitData()
             }
             doubleSentinel["stops"] = true;
             doubleSentinel["check"]();
-            //console.log("stops: " + stops);
         }
     }
     stopDataGetter.open("GET", "data/stops_compiled.txt");
@@ -115,12 +97,10 @@ function loadTransitData()
                 for (let j = 0; j < r_stops.length; j++) {
                     r_stops[j] = parseInt(r_stops[j]);
                 }
-                //console.log(lat + ":" + parseFloat(lat));
                 routes[route] = {"stops":r_stops};
             }
             doubleSentinel["routes"] = true;
             doubleSentinel["check"]();
-            //console.log(routes);
         }
     }
     routeDataGetter.open("GET", "data/routes_compiled.txt");
@@ -157,8 +137,6 @@ function dragged()
         let tempNextLayerStops = {};
         let stopsInRadius = {};
         for (let stop in nextLayerStops) {
-
-            //console.log(L + ":" + stop);
 
             // draw the stops for this layer
             let lat = nextLayerStops[stop]["lat"];
@@ -260,7 +238,6 @@ function init()
     initMap(); // gets location and inits map
     loadTransitData();
     showValue(5);
-    //handleDrawingInstances();
     console.log("init finished");
 }
 
