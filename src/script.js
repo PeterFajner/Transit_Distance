@@ -71,7 +71,7 @@ function dragged()
 {
 
     let nextLayerStops = [];   
-    let plottedStops = []; // stops that have already been plotted
+    let remainingStops = (JSON.parse(JSON.stringify(stops))); // deep clone stops and routes so we can delete from them and then reuse the original
 
     // remove all previous circles
     for (let i = 0; i < shapes.length; i++) { // for..in loop doesn't work here
@@ -95,7 +95,7 @@ function dragged()
             drawCircle({lat:lat,lng:lng}, walkRadius, rgb(100*L,100*L,20*L), depth-L, shapes);
 
             // get other stops within walking distance
-            for (let nearbyStopNum in stops) {
+            for (let nearbyStopNum in remainingStops) {
                 var lat2 = parseFloat(stops[nearbyStopNum]["lat"]);
                 var lng2 = parseFloat(stops[nearbyStopNum]["lng"]);
                 var dist = latlng_to_m(lat, lng, lat2, lng2);
@@ -116,13 +116,14 @@ function dragged()
             let stop = stops[stopNum];
             for (let connectedStopIndex in stop["stops"]) {
                 let connectedStopNum = stop["stops"][connectedStopIndex];
-                if (nextLayerStops.indexOf(connectedStopNum) < 0 && plottedStops.indexOf(connectedStopNum) < 0) {
+                if (nextLayerStops.indexOf(connectedStopNum) < 0) {
                     nextLayerStops.push(connectedStopNum);
-                    plottedStops.push(connectedStopNum);
+                    delete remainingStops.connectedStopNum;
                 }
             }
         }
     }
+    console.log("finished drawing");
 }
 
 function drawCircle(position, radius, color, zindex, shapesArray)

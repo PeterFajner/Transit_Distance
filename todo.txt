@@ -2,3 +2,4 @@
 - restrict api key
 - mobile friendly
 - auto retrieve data from RSS (server-side or client side)
+- performance: https://stackoverflow.com/questions/6768477/adding-many-circles-to-a-google-map
