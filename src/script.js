@@ -2,7 +2,6 @@
 var map;
 var pos;
 var stops = {};
-var routes = {};
 var marker;
 var shapes = [];
 
@@ -53,12 +52,26 @@ function initMap()
 
 function loadTransitData()
 {
-    
+
+    // REMOVE
+    /*
+    var sentinel = false
+    var check = function() {if (sentinel) handleDrawingInstances()};
     var doubleSentinel = {"stops": false, "routes":false, "check":function() {
         if (doubleSentinel["stops"] && doubleSentinel["routes"]) handleDrawingInstances();
-    }};
+    }};*/
     
     // compile stops
+    function json_acquired(data, textStatus, jqXHR)
+    {
+        stops = data;
+        handleDrawingInstances();
+    }
+    jQuery.getJSON("data/compiled_stops.json", "", json_acquired);
+
+
+    // REMOVE
+    /*
     var stopDataGetter = new XMLHttpRequest();
     stopDataGetter.onreadystatechange = function() {
         if (stopDataGetter.readyState == 4 && stopDataGetter.status == 200) {
@@ -102,7 +115,7 @@ function loadTransitData()
         }
     }
     routeDataGetter.open("GET", "data/routes_compiled.txt");
-    routeDataGetter.send();
+    routeDataGetter.send();*/
 }
 
 function handleDrawingInstances()
@@ -113,45 +126,68 @@ function handleDrawingInstances()
 
 function dragged()
 {
-    let lStops = (JSON.parse(JSON.stringify(stops))); // deep clone stops and routes so we can delete from them and then reuse the original
-    let lRoutes = (JSON.parse(JSON.stringify(routes)));
 
-    var nextLayerStops = {};   
-    var plottedStops = {}; // stops that have already been plotted
+    let nextLayerStops = [];   
+    let plottedStops = []; // stops that have already been plotted
 
     // remove all previous circles
     for (let i = 0; i < shapes.length; i++) { // for..in loop doesn't work here
         shapes[i].setMap(null);
     }
     shapes = [];
-    plottedStops = {};
-    nextLayerStops = {};
 
     // add current position as a mock stop
-    nextLayerStops = [{lat:marker.getPosition().lat(), lng:marker.getPosition().lng()}];
+    stops["user"] = {lat:marker.getPosition().lat(), lng:marker.getPosition().lng(), stops:[]}
+    nextLayerStops = ["user"];
+
+
+
+    // TODO: prevent duplicates
+
 
     // calculate and draw each layer
     for (let L = 0; L < depth; L++) {
-        let tempNextLayerStops = {};
-        let stopsInRadius = {};
-        for (let stop in nextLayerStops) {
+        let stopsInRadius = [];
+        for (let stopIndex in nextLayerStops) {
+            let stopNum = nextLayerStops[stopIndex];
 
             // draw the stops for this layer
-            let lat = nextLayerStops[stop]["lat"];
-            let lng = nextLayerStops[stop]["lng"];
+            let lat = parseFloat(stops[stopNum]["lat"]);
+            let lng = parseFloat(stops[stopNum]["lng"]);
             drawCircle({lat:lat,lng:lng}, walkRadius, rgb(100*L,100*L,20*L), depth-L, shapes);
 
-            // get other stops within radius
-            for (stop in lStops) {
-                var lat2 = lStops[stop]["lat"];
-                var lng2 = lStops[stop]["lng"];
+            // get other stops within walking distance
+            for (let nearbyStopNum in stops) {
+                var lat2 = parseFloat(stops[nearbyStopNum]["lat"]);
+                var lng2 = parseFloat(stops[nearbyStopNum]["lng"]);
                 var dist = latlng_to_m(lat, lng, lat2, lng2);
                 if (dist < walkRadius) {
-                    stopsInRadius[stop] = lStops[stop];
+                    if (stopsInRadius.indexOf(nearbyStopNum) < 0) {
+                        stopsInRadius.push(nearbyStopNum);
+                    }
                 }
             }
         }
 
+        // clear nextLayerStops
+        nextLayerStops = [];
+
+        // get stops connected to those in walking distance
+        for (let stopIndex in stopsInRadius) {
+            let stopNum = stopsInRadius[stopIndex];
+            let stop = stops[stopNum];
+            //console.log(stop["stops"]);
+            for (let connectedStopIndex in stop["stops"]) {
+                let connectedStopNum = stop["stops"][connectedStopIndex];
+                if (nextLayerStops.indexOf(connectedStopNum) < 0 && plottedStops.indexOf(connectedStopNum) < 0) {
+                    nextLayerStops.push(connectedStopNum);
+                    plottedStops.push(connectedStopNum);
+                }
+            }
+        }
+
+        // REMOVE
+        /*
         // get routes within radius
         let routesInRadius = {};
         for (let stopNum in stopsInRadius) { // get routes from stops
@@ -173,17 +209,7 @@ function dragged()
                 plottedStops[r_stops[substop]] = lStops[r_stops[substop]];
                 tempNextLayerStops[r_stops[substop]] = lStops[r_stops[substop]];
             }
-        }
-
-        // clear the used stops and routes, as they aren't needed anymore
-        for (let stop in nextLayerStops) {
-            delete lStops[stop];
-        }
-        for (let route in routesInRadius) {
-            delete lRoutes[route];
-        }
-
-        nextLayerStops = tempNextLayerStops;
+        }*/
     }
 }
 
@@ -232,11 +258,11 @@ function rgb(r,g,b)
 
 function init()
 {
-    console.log("init");
+    //console.log("init");
     initMap(); // gets location and inits map
     loadTransitData();
     showValue(5);
-    console.log("init finished");
+    //console.log("init finished");
 }
 
 function refresh()
