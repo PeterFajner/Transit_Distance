@@ -17,8 +17,6 @@ function locationError()
         position: pos,
         map: map
     });
-    
-    //handleDrawingInstances(); // draw the routes
 }
 
 function initMap()
