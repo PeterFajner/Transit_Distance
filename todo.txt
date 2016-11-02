@@ -1,0 +1,3 @@
+- precalc route connections
+- restrict api key
+- mobile friendly
